@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.geekstylecn.translate.dao.I18NTranslateDao">
+
+	<select id="getValue" parameterType="I18NTranslate" resultType="string">
+		select
+			`value`
+		from
+			i18n_translate
+		where 
+			`key` = #{key}
+			and locale = #{locale}
+	</select>
+	
+	<select id="batchQuery" resultType="I18NTranslate" parameterType="map">
+		select
+			`key`,`value`
+		from
+			i18n_translate
+		where
+			locale = #{locale}
+   			and `key` in
+            <foreach item="item" index="index" collection="keyList" open="(" separator="," close=")">
+            	#{item}
+            </foreach>
+	</select>
+	
+</mapper>
