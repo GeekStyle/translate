@@ -39,8 +39,11 @@ public class MallCustomProductController {
 		MallCustomProduct mallCustomProduct = mallCustomProductService.getMallCustomProduct(id);
 		String locale = request.getHeader("i18n");
 		JSONObject result = new JSONObject(mallCustomProduct);
+		
 		List<String> i18nKeyList = getI18nKeyList(result,null);
+		
 		Map<String, String> i18nMap =  i18NTranslateService.batchQuery(i18nKeyList,locale); // one time batch dao
+		
 		result = translate(result, locale, i18nMap);
 		
 		System.out.println("time spent: " + (System.currentTimeMillis() - startTime));
@@ -95,3 +98,4 @@ public class MallCustomProductController {
 	}
 	
 }
+
