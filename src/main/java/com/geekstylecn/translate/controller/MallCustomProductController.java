@@ -32,28 +32,36 @@ public class MallCustomProductController {
 	I18NTranslateService i18NTranslateService;
 	
 	@GetMapping("/{id}")
-	public String getMallCustomProduct(HttpServletRequest request, @PathVariable Long id) {
-		long startTime = System.currentTimeMillis();
-		//get all the dao keys and get them in just one dao access
-		
+	public ResponseEntity<?> getMallCustomProduct(HttpServletRequest request, @PathVariable Long id) {
 		MallCustomProduct mallCustomProduct = mallCustomProductService.getMallCustomProduct(id);
 		String locale = request.getHeader("i18n");
-		JSONObject result = new JSONObject(mallCustomProduct);
-		
-		List<String> i18nKeyList = getI18nKeyList(result,null);
-		
-		Map<String, String> i18nMap =  i18NTranslateService.batchQuery(i18nKeyList,locale); // one time batch dao
-		
-		result = translate(result, locale, i18nMap);
-		
-		System.out.println("time spent: " + (System.currentTimeMillis() - startTime));
-		return result.toString();
+		if(locale != null) {
+			JSONObject result = translateJson(request,mallCustomProduct);
+			return ResponseEntity.status(HttpStatus.OK).body(result.toString());
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(mallCustomProduct);
 	}
 	
 	@GetMapping
 	public ResponseEntity<?> getAllMallCustomProduct(HttpServletRequest request) {
 		List<MallCustomProduct> mallCustomProductList = mallCustomProductService.getAllMallCustomProduct();
 		return ResponseEntity.status(HttpStatus.OK).body(mallCustomProductList);
+	}
+	
+	public JSONObject translateJson(HttpServletRequest request, Object object) {
+		String locale = request.getHeader("i18n");
+		//get all the dao keys and get them in just one dao access
+		long startTime = System.currentTimeMillis();
+		JSONObject result = new JSONObject(object);
+		List<String> i18nKeyList = getI18nKeyList(result,null);
+		
+		Map<String, String> i18nMap =  i18NTranslateService.batchQuery(i18nKeyList,locale); // one time batch dao
+		
+		result = updateJson(result, locale, i18nMap);
+		
+		System.out.println("time spent: " + (System.currentTimeMillis() - startTime));
+		
+		return result;
 	}
 	
 	private List<String> getI18nKeyList(JSONObject source, List<String> i18nKeyList) {
@@ -78,7 +86,7 @@ public class MallCustomProductController {
 		return i18nKeyList;
 	}
 	
-	private JSONObject translate(JSONObject source,String locale, Map<String, String> i18nMap ) {
+	private JSONObject updateJson(JSONObject source,String locale, Map<String, String> i18nMap ) {
 		
 		Set<String> keys = source.keySet();
 		for(String key : keys) {
@@ -86,10 +94,10 @@ public class MallCustomProductController {
 			if( value instanceof String && ((String)value).startsWith("i18n_") ) {
 				source.put(key, i18nMap.get(value));
 			}else if( value instanceof JSONObject ) {
-				translate( (JSONObject)value, locale,i18nMap);
+				updateJson( (JSONObject)value, locale,i18nMap);
 			}else if( value instanceof JSONArray ) {
 				for (int i = 0; i < ((JSONArray) value).length(); i++) {
-					translate(((JSONArray) value).getJSONObject(i), locale,i18nMap);
+					updateJson(((JSONArray) value).getJSONObject(i), locale,i18nMap);
 				}
 			}
 		}
