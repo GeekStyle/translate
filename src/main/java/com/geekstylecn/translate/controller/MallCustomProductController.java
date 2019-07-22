@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.geekstylecn.translate.model.MallCustomProduct;
 import com.geekstylecn.translate.service.I18NTranslateService;
 import com.geekstylecn.translate.service.MallCustomProductService;
+import com.geekstylecn.translate.util.JSONUtil;
 
 @RestController
 @RequestMapping("/product")
@@ -34,28 +35,40 @@ public class MallCustomProductController {
 	@GetMapping("/{id}")
 	public ResponseEntity<?> getMallCustomProduct(HttpServletRequest request, @PathVariable Long id) {
 		MallCustomProduct mallCustomProduct = mallCustomProductService.getMallCustomProduct(id);
+		
 		String locale = request.getHeader("i18n");
 		if(locale != null) {
 			JSONObject result = translateJson(request,mallCustomProduct);
 			return ResponseEntity.status(HttpStatus.OK).body(result.toString());
 		}
+		
 		return ResponseEntity.status(HttpStatus.OK).body(mallCustomProduct);
 	}
 	
 	@GetMapping
 	public ResponseEntity<?> getAllMallCustomProduct(HttpServletRequest request) {
 		List<MallCustomProduct> mallCustomProductList = mallCustomProductService.getAllMallCustomProduct();
+		
+//		String locale = request.getHeader("i18n");
+//		if(locale != null) {
+//			JSONObject result = translateJson(request,mallCustomProductList);
+//			return ResponseEntity.status(HttpStatus.OK).body(result.toString());
+//		}
+		
 		return ResponseEntity.status(HttpStatus.OK).body(mallCustomProductList);
 	}
 	
-	public JSONObject translateJson(HttpServletRequest request, Object object) {
+	private JSONObject translateJson(HttpServletRequest request, Object object) {
 		String locale = request.getHeader("i18n");
 		//get all the dao keys and get them in just one dao access
 		long startTime = System.currentTimeMillis();
 		JSONObject result = new JSONObject(object);
 		List<String> i18nKeyList = getI18nKeyList(result,null);
 		
+		System.out.println(JSONUtil.toJSONString(i18nKeyList));
+		
 		Map<String, String> i18nMap =  i18NTranslateService.batchQuery(i18nKeyList,locale); // one time batch dao
+		System.out.println(JSONUtil.toJSONString(i18nMap));
 		
 		result = updateJson(result, locale, i18nMap);
 		
